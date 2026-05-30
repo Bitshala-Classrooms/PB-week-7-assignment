@@ -1,7 +1,7 @@
 # Programming Bitcoin - Week 7
 
 ## Overview
-This week, you'll learn about Bloom Filters and Segwit in Bitcoin and how to implement them in Python.
+This week, you'll learn about Simplified Payment Verification (SPV) and Bloom Filters in Bitcoin and how to implement them in Python.
 
 ## Solution Requirements
 
@@ -28,7 +28,7 @@ You need to complete the Python scripts and notebook to pass.
 
 
 ### Testing Steps
-- Run all the cells in `Chapter12.ipynb`. If all the cells run without errors, you have successfully completed the challenge and are ready to submit your solution.
+- Run all the cells in `Chapter11.ipynb` and `Chapter12.ipynb`. If all the cells run without errors, you have successfully completed the challenge and are ready to submit your solution.
 
 ### Common Issues
 - If you are facing issues with solving the assignment locally, you can use [Google Colab](https://colab.research.google.com) to run in browser.
