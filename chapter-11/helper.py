@@ -106,20 +106,20 @@ def encode_varint(i):
         raise ValueError('integer too large: {}'.format(i))
 
 
-def h160_to_p2pkh_address(h160, testnet=False):
+def h160_to_p2pkh_address(h160, testnet4=False):
     '''Takes a byte sequence hash160 and returns a p2pkh address string'''
     # p2pkh has a prefix of b'\x00' for mainnet, b'\x6f' for testnet
-    if testnet:
+    if testnet4:
         prefix = b'\x6f'
     else:
         prefix = b'\x00'
     return encode_base58_checksum(prefix + h160)
 
 
-def h160_to_p2sh_address(h160, testnet=False):
+def h160_to_p2sh_address(h160, testnet4=False):
     '''Takes a byte sequence hash160 and returns a p2sh address string'''
     # p2sh has a prefix of b'\x05' for mainnet, b'\xc4' for testnet
-    if testnet:
+    if testnet4:
         prefix = b'\xc4'
     else:
         prefix = b'\x05'
@@ -256,16 +256,16 @@ class HelperTest(TestCase):
     def test_p2pkh_address(self):
         h160 = bytes.fromhex('74d691da1574e6b3c192ecfb52cc8984ee7b6c56')
         want = '1BenRpVUFK65JFWcQSuHnJKzc4M8ZP8Eqa'
-        self.assertEqual(h160_to_p2pkh_address(h160, testnet=False), want)
+        self.assertEqual(h160_to_p2pkh_address(h160, testnet4=False), want)
         want = 'mrAjisaT4LXL5MzE81sfcDYKU3wqWSvf9q'
-        self.assertEqual(h160_to_p2pkh_address(h160, testnet=True), want)
+        self.assertEqual(h160_to_p2pkh_address(h160, testnet4=True), want)
 
     def test_p2sh_address(self):
         h160 = bytes.fromhex('74d691da1574e6b3c192ecfb52cc8984ee7b6c56')
         want = '3CLoMMyuoDQTPRD3XYZtCvgvkadrAdvdXh'
-        self.assertEqual(h160_to_p2sh_address(h160, testnet=False), want)
+        self.assertEqual(h160_to_p2sh_address(h160, testnet4=False), want)
         want = '2N3u1R6uwQfuobCqbCgBkpsgBxvr1tZpe7B'
-        self.assertEqual(h160_to_p2sh_address(h160, testnet=True), want)
+        self.assertEqual(h160_to_p2sh_address(h160, testnet4=True), want)
 
     def test_calculate_new_bits(self):
         prev_bits = bytes.fromhex('54d80118')

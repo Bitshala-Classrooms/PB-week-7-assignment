@@ -20,16 +20,16 @@ class TxFetcher:
     cache = {}
 
     @classmethod
-    def get_url(cls, testnet=False):
-        if testnet:
-            return 'https://blockstream.info/testnet/api'
+    def get_url(cls, testnet4=False):
+        if testnet4:
+            return 'https://mempool.space/testnet4/api'
         else:
-            return 'https://blockstream.info/api'
+            return 'https://mempool.space/api'
 
     @classmethod
-    def fetch(cls, tx_id, testnet=False, fresh=False):
+    def fetch(cls, tx_id, testnet4=False, fresh=False):
         if fresh or (tx_id not in cls.cache):
-            url = '{}/tx/{}/hex'.format(cls.get_url(testnet), tx_id)
+            url = '{}/tx/{}/hex'.format(cls.get_url(testnet4), tx_id)
             response = requests.get(url)
             try:
                 raw = bytes.fromhex(response.text.strip())
@@ -38,14 +38,14 @@ class TxFetcher:
             # make sure the tx we got matches to the hash we requested
             if raw[4] == 0:
                 raw = raw[:4] + raw[6:]
-                tx = Tx.parse(BytesIO(raw), testnet=testnet)
+                tx = Tx.parse(BytesIO(raw), testnet4=testnet4)
                 tx.locktime = little_endian_to_int(raw[-4:])
             else:
-                tx = Tx.parse(BytesIO(raw), testnet=testnet)
+                tx = Tx.parse(BytesIO(raw), testnet4=testnet4)
             if tx.id() != tx_id:
                 raise ValueError('not the same id: {} vs {}'.format(tx.id(), tx_id))
             cls.cache[tx_id] = tx
-        cls.cache[tx_id].testnet = testnet
+        cls.cache[tx_id].testnet4 = testnet4
         return cls.cache[tx_id]
 
     @classmethod
@@ -72,12 +72,12 @@ class TxFetcher:
 class Tx:
     command = b'tx'
 
-    def __init__(self, version, tx_ins, tx_outs, locktime, testnet=False):
+    def __init__(self, version, tx_ins, tx_outs, locktime, testnet4=False):
         self.version = version
         self.tx_ins = tx_ins
         self.tx_outs = tx_outs
         self.locktime = locktime
-        self.testnet = testnet
+        self.testnet4 = testnet4
 
     def __repr__(self):
         tx_ins = ''
@@ -103,7 +103,7 @@ class Tx:
         return hash256(self.serialize())[::-1]
 
     @classmethod
-    def parse(cls, s, testnet=False):
+    def parse(cls, s, testnet4=False):
         '''Takes a byte stream and parses the transaction at the start
         return a Tx object
         '''
@@ -125,7 +125,7 @@ class Tx:
         # locktime is an integer in 4 bytes, little-endian
         locktime = little_endian_to_int(s.read(4))
         # return an instance of the class (see __init__ for args)
-        return cls(version, inputs, outputs, locktime, testnet=testnet)
+        return cls(version, inputs, outputs, locktime, testnet4=testnet4)
 
     def serialize(self):
         '''Returns the byte serialization of the transaction'''
@@ -153,7 +153,7 @@ class Tx:
         input_sum, output_sum = 0, 0
         # use TxIn.value() to sum up the input amounts
         for tx_in in self.tx_ins:
-            input_sum += tx_in.value(self.testnet)
+            input_sum += tx_in.value(self.testnet4)
         # use TxOut.amount to sum up the output amounts
         for tx_out in self.tx_outs:
             output_sum += tx_out.amount
@@ -177,7 +177,7 @@ class Tx:
                     script_sig = redeem_script
                 # otherwise the previous tx's ScriptPubkey is the ScriptSig
                 else:
-                    script_sig = tx_in.script_pubkey(self.testnet)
+                    script_sig = tx_in.script_pubkey(self.testnet4)
             # Otherwise, the ScriptSig is empty
             else:
                 script_sig = None
@@ -207,7 +207,7 @@ class Tx:
         # get the relevant input
         tx_in = self.tx_ins[input_index]
         # grab the previous ScriptPubKey
-        script_pubkey = tx_in.script_pubkey(testnet=self.testnet)
+        script_pubkey = tx_in.script_pubkey(testnet4=self.testnet4)
         # check to see if the ScriptPubkey is a p2sh using
         # Script.is_p2sh_script_pubkey()
         if script_pubkey.is_p2sh_script_pubkey():
@@ -329,25 +329,25 @@ class TxIn:
         result += int_to_little_endian(self.sequence, 4)
         return result
 
-    def fetch_tx(self, testnet=False):
-        return TxFetcher.fetch(self.prev_tx.hex(), testnet=testnet)
+    def fetch_tx(self, testnet4=False):
+        return TxFetcher.fetch(self.prev_tx.hex(), testnet4=testnet4)
 
-    def value(self, testnet=False):
+    def value(self, testnet4=False):
         '''Get the outpoint value by looking up the tx hash
         Returns the amount in satoshi
         '''
         # use self.fetch_tx to get the transaction
-        tx = self.fetch_tx(testnet=testnet)
+        tx = self.fetch_tx(testnet4=testnet4)
         # get the output at self.prev_index
         # return the amount property
         return tx.tx_outs[self.prev_index].amount
 
-    def script_pubkey(self, testnet=False):
+    def script_pubkey(self, testnet4=False):
         '''Get the ScriptPubKey by looking up the tx hash
         Returns a Script object
         '''
         # use self.fetch_tx to get the transaction
-        tx = self.fetch_tx(testnet=testnet)
+        tx = self.fetch_tx(testnet4=testnet4)
         # get the output at self.prev_index
         # return the script_pubkey property
         return tx.tx_outs[self.prev_index].script_pubkey
@@ -467,7 +467,7 @@ class TxTest(TestCase):
     def test_verify_p2pkh(self):
         tx = TxFetcher.fetch('452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03')
         self.assertTrue(tx.verify())
-        tx = TxFetcher.fetch('5418099cc755cb9dd3ebc6cf1a7888ad53a1a3beb5a025bce89eb1bf7f1650a2', testnet=True)
+        tx = TxFetcher.fetch('5418099cc755cb9dd3ebc6cf1a7888ad53a1a3beb5a025bce89eb1bf7f1650a2', testnet4=True)
         self.assertTrue(tx.verify())
 
     def test_verify_p2sh(self):
@@ -477,7 +477,7 @@ class TxTest(TestCase):
     def test_sign_input(self):
         private_key = PrivateKey(secret=8675309)
         stream = BytesIO(bytes.fromhex('010000000199a24308080ab26e6fb65c4eccfadf76749bb5bfa8cb08f291320b3c21e56f0d0d00000000ffffffff02408af701000000001976a914d52ad7ca9b3d096a38e752c2018e6fbc40cdf26f88ac80969800000000001976a914507b27411ccf7f16f10297de6cef3f291623eddf88ac00000000'))
-        tx_obj = Tx.parse(stream, testnet=True)
+        tx_obj = Tx.parse(stream, testnet4=True)
         self.assertTrue(tx_obj.sign_input(0, private_key))
         want = '010000000199a24308080ab26e6fb65c4eccfadf76749bb5bfa8cb08f291320b3c21e56f0d0d0000006b4830450221008ed46aa2cf12d6d81065bfabe903670165b538f65ee9a3385e6327d80c66d3b502203124f804410527497329ec4715e18558082d489b218677bd029e7fa306a72236012103935581e52c354cd2f484fe8ed83af7a3097005b2f9c60bff71d35bd795f54b67ffffffff02408af701000000001976a914d52ad7ca9b3d096a38e752c2018e6fbc40cdf26f88ac80969800000000001976a914507b27411ccf7f16f10297de6cef3f291623eddf88ac00000000'
         self.assertEqual(tx_obj.serialize().hex(), want)
